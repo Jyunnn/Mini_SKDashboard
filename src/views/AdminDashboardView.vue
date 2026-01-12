@@ -1,7 +1,19 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex flex-col">
     <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-      <h1 class="text-xl font-bold text-gray-800">Dashboard Builder</h1>
+      <div class="flex items-center gap-3">
+        <button
+          @click="showLeftPanel = !showLeftPanel"
+          class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+          :class="{ 'text-blue-600': showLeftPanel }"
+          title="切換元件庫"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <h1 class="text-xl font-bold text-gray-800">Dashboard Builder</h1>
+      </div>
       <div class="flex items-center gap-3">
         <button
           @click="handlePreview"
@@ -21,10 +33,25 @@
         >
           登出
         </button>
+        <button
+          @click="showRightPanel = !showRightPanel"
+          class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+          :class="{ 'text-blue-600': showRightPanel }"
+          title="切換屬性編輯器"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
       </div>
     </header>
     <div class="flex-1 flex overflow-hidden">
-      <aside class="w-64 bg-white border-r border-gray-200 flex-shrink-0">
+      <aside
+        v-show="showLeftPanel"
+        class="w-64 bg-white border-r border-gray-200 flex-shrink-0 transition-all duration-300 overflow-hidden"
+        :class="{ 'w-0 border-none': !showLeftPanel }"
+      >
         <WidgetPanel @widget-drag="handleWidgetDrag" />
       </aside>
       <main
@@ -46,7 +73,11 @@
           />
         </div>
       </main>
-      <aside class="w-72 bg-white border-l border-gray-200 flex-shrink-0">
+      <aside
+        v-show="showRightPanel"
+        class="w-72 bg-white border-l border-gray-200 flex-shrink-0 transition-all duration-300 overflow-hidden"
+        :class="{ 'w-0 border-none': !showRightPanel }"
+      >
         <InspectorPanel
           :selected-widget="dashboardStore.selectedWidget"
           @widget-update="handleWidgetUpdate"
@@ -72,6 +103,7 @@ import { useAuthStore } from '@/store/auth'
 import { useDashboardStore } from '@/store/dashboard'
 import { useDataSourceStore } from '@/store/datasource'
 import { v4 as uuidv4 } from 'uuid'
+import { dataSourceService } from '@/services/DataSourceService'
 import WidgetPanel from '@/components/editor/WidgetPanel.vue'
 import DashboardRenderer from '@/components/dashboard/DashboardRenderer.vue'
 import InspectorPanel from '@/components/editor/InspectorPanel.vue'
@@ -89,6 +121,8 @@ const draggedWidgetType = ref<WidgetType | null>(null)
 const showDataSourceDialog = ref(false)
 const pendingWidgetType = ref<WidgetType | null>(null)
 const editingWidget = ref<DashboardWidget | null>(null)
+const showLeftPanel = ref(true)
+const showRightPanel = ref(true)
 
 onMounted(() => {
   dashboardStore.loadFromLocalStorage()
