@@ -64,6 +64,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
     isEditable.value = editable
   }
 
+  function addWidgets(widgets: DashboardWidget[]): void {
+    widgets.value.push(...widgets)
+  }
+
   return {
     widgets,
     selectedWidgetId,
@@ -77,6 +81,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     saveToLocalStorage,
     loadFromLocalStorage,
     clearWidgets,
-    setEditable
+    setEditable,
+    addWidgets
   }
 })

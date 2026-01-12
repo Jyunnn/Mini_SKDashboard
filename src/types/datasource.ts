@@ -20,3 +20,13 @@ export interface ValidationResult {
   error?: string
   data?: any
 }
+
+export interface DynamicCardItem {
+  key: string
+  title: string
+  value: string | number
+}
+
+export interface DynamicCardResponse {
+  items: DynamicCardItem[]
+}

@@ -1,4 +1,4 @@
-export type WidgetType = 'StatCard' | 'LineChart' | 'SimpleText'
+export type WidgetType = 'StatCard' | 'LineChart' | 'SimpleText' | 'DynamicStatCard'
 
 export interface WidgetLayout {
   x: number
@@ -40,4 +40,10 @@ export interface SimpleTextProps {
   align?: 'left' | 'center' | 'right'
 }
 
-export type WidgetProps = StatCardProps | LineChartProps | SimpleTextProps
+export type WidgetProps = StatCardProps | LineChartProps | SimpleTextProps | DynamicStatCardProps
+
+export interface DynamicStatCardProps {
+  key: string
+  title: string
+  value: string | number
+}
