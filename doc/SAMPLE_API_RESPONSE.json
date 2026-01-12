@@ -1,0 +1,32 @@
+[
+  {
+    "key": "sales",
+    "title": "銷售額",
+    "value": 1250000
+  },
+  {
+    "key": "orders",
+    "title": "訂單數",
+    "value": 456
+  },
+  {
+    "key": "customers",
+    "title": "客戶數",
+    "value": 89
+  },
+  {
+    "key": "conversion",
+    "title": "轉換率",
+    "value": "12.5%"
+  },
+  {
+    "key": "avg_order",
+    "title": "平均訂單金額",
+    "value": "NT$ 2,741"
+  },
+  {
+    "key": "return_rate",
+    "title": "退貨率",
+    "value": "3.2%"
+  }
+]

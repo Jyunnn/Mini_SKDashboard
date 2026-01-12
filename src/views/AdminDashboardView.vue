@@ -76,6 +76,7 @@ import WidgetPanel from '@/components/editor/WidgetPanel.vue'
 import DashboardRenderer from '@/components/dashboard/DashboardRenderer.vue'
 import InspectorPanel from '@/components/editor/InspectorPanel.vue'
 import DataSourceConfigDialog from '@/components/editor/DataSourceConfigDialog.vue'
+import { dataSourceService } from '@/services/DataSourceService'
 import type { DashboardWidget, WidgetType } from '@/types/widget'
 import type { DataSourceConfig } from '@/types/datasource'
 

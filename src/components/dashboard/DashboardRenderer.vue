@@ -46,7 +46,8 @@ import { dataSourceService } from '@/services/DataSourceService'
 const widgetComponents = {
   StatCard: defineAsyncComponent(() => import('@/components/widgets/StatCard.vue')),
   LineChart: defineAsyncComponent(() => import('@/components/widgets/LineChart.vue')),
-  SimpleText: defineAsyncComponent(() => import('@/components/widgets/SimpleText.vue'))
+  SimpleText: defineAsyncComponent(() => import('@/components/widgets/SimpleText.vue')),
+  DynamicStatCard: defineAsyncComponent(() => import('@/components/widgets/DynamicStatCard.vue'))
 }
 
 interface Props {
@@ -117,6 +118,12 @@ function mapDataToProps(widgetType: string, data: any): Record<string, any> {
     case 'SimpleText':
       return {
         text: data.text || data.content || data.value || '文字內容'
+      }
+    case 'DynamicStatCard':
+      return {
+        key: data.key || '',
+        title: data.title || '',
+        value: data.value || 0
       }
     default:
       return {}

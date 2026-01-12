@@ -1,4 +1,5 @@
-import type { DataSource, DataSourceConfig, ValidationResult } from '@/types/datasource'
+import type { DataSource, DataSourceConfig, ValidationResult, DynamicCardItem } from '@/types/datasource'
+import type { DashboardWidget, WidgetLayout } from '@/types/widget'
 
 export class DataSourceService {
   private static instance: DataSourceService
@@ -234,6 +235,50 @@ export class DataSourceService {
     } catch {
       return false
     }
+  }
+
+  async fetchDynamicCards(dataSource: DataSource): Promise<DynamicCardItem[]> {
+    const data = await this.fetchData(dataSource)
+    
+    if (!Array.isArray(data)) {
+      throw new Error('API 必須返回陣列格式資料')
+    }
+    
+    return data.map((item: any, index: number) => ({
+      key: item.key || `item-${index}`,
+      title: item.title || item.name || `項目 ${index + 1}`,
+      value: item.value || 0
+    }))
+  }
+
+  generateDynamicWidgets(
+    dataSourceId: string,
+    items: DynamicCardItem[],
+    startX: number = 0,
+    startY: number = 0
+  ): DashboardWidget[] {
+    return items.map((item, index) => {
+      const row = Math.floor(index / 3)
+      const col = index % 3
+      
+      return {
+        id: `dynamic-widget-${Date.now()}-${index}`,
+        type: 'DynamicStatCard',
+        layout: {
+          i: `dynamic-widget-${Date.now()}-${index}`,
+          x: startX + col * 4,
+          y: startY + row * 4,
+          w: 4,
+          h: 4
+        },
+        props: {
+          key: item.key,
+          title: item.title,
+          value: item.value
+        },
+        dataSourceId
+      }
+    })
   }
 }
 
