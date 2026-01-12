@@ -10,6 +10,40 @@
           <p class="font-medium text-gray-800 mt-1">{{ widgetTypeLabels[selectedWidget.type] }}</p>
         </div>
 
+        <div v-if="currentDataSource" class="bg-blue-50 rounded-lg p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-500">資料來源</p>
+            <button
+              @click="handleRefreshData"
+              :disabled="isRefreshing || currentDataSource.type === 'WebSocket'"
+              class="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {{ isRefreshing ? '重新整理中...' : '重新整理' }}
+            </button>
+          </div>
+          <p class="font-medium text-gray-800">{{ dataSourceTypeLabels[currentDataSource.type] }}</p>
+          <div v-if="currentDataSource.type === 'API'" class="text-xs text-gray-600 space-y-1">
+            <p><span class="font-medium">URL:</span> {{ currentDataSource.config.url }}</p>
+            <p><span class="font-medium">Method:</span> {{ currentDataSource.config.method }}</p>
+            <p v-if="currentDataSource.config.pollingInterval">
+              <span class="font-medium">輪詢:</span> {{ currentDataSource.config.pollingInterval }}ms
+            </p>
+          </div>
+          <div v-else-if="currentDataSource.type === 'WebSocket'" class="text-xs text-gray-600">
+            <p><span class="font-medium">URL:</span> {{ currentDataSource.config.url }}</p>
+            <p class="text-green-600 mt-1">● 已連線</p>
+          </div>
+          <div v-else class="text-xs text-gray-600">
+            <p class="font-medium">手動定義資料</p>
+          </div>
+          <button
+            @click="handleEditDataSource"
+            class="mt-2 w-full px-3 py-1.5 text-xs font-medium text-blue-600 bg-white border border-blue-200 rounded hover:bg-blue-50 transition-colors"
+          >
+            編輯資料來源
+          </button>
+        </div>
+
         <div v-if="selectedWidget.type === 'StatCard'" class="space-y-3">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">標題</label>
@@ -141,12 +175,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { DashboardWidget } from '@/types/widget'
+import { useDataSourceStore } from '@/store/datasource'
+import { dataSourceService } from '@/services/DataSourceService'
 
 const emit = defineEmits<{
   'widget-update': [widget: DashboardWidget]
   'widget-delete': [id: string]
+  'datasource-edit': [widget: DashboardWidget]
+  'datasource-refresh': [widget: DashboardWidget]
 }>()
 
 interface Props {
@@ -155,15 +193,48 @@ interface Props {
 
 const props = defineProps<Props>()
 
+const dataSourceStore = useDataSourceStore()
+const isRefreshing = ref(false)
+
 const widgetTypeLabels: Record<string, string> = {
   StatCard: '統計卡片',
   LineChart: '折線圖',
   SimpleText: '文字標題'
 }
 
+const dataSourceTypeLabels: Record<string, string> = {
+  API: 'API 來源',
+  WebSocket: 'WebSocket 來源',
+  Manual: '假資料'
+}
+
+const currentDataSource = computed(() => {
+  if (!props.selectedWidget) return null
+  return dataSourceStore.getDataSource(props.selectedWidget.dataSourceId)
+})
+
 function handleDelete() {
   if (props.selectedWidget) {
     emit('widget-delete', props.selectedWidget.id)
+  }
+}
+
+function handleEditDataSource() {
+  if (props.selectedWidget) {
+    emit('datasource-edit', props.selectedWidget)
+  }
+}
+
+async function handleRefreshData() {
+  if (!props.selectedWidget) return
+
+  isRefreshing.value = true
+  try {
+    emit('datasource-refresh', props.selectedWidget)
+  } finally {
+    setTimeout(() => {
+      isRefreshing.value = false
+    }, 500)
   }
 }
 </script>

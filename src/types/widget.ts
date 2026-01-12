@@ -13,6 +13,7 @@ export interface DashboardWidget {
   type: WidgetType
   layout: WidgetLayout
   props: Record<string, any>
+  dataSourceId: string
 }
 
 export interface StatCardProps {

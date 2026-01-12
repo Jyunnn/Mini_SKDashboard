@@ -51,9 +51,17 @@
           :selected-widget="dashboardStore.selectedWidget"
           @widget-update="handleWidgetUpdate"
           @widget-delete="handleWidgetDelete"
+          @datasource-edit="handleDataSourceEdit"
+          @datasource-refresh="handleDataSourceRefresh"
         />
       </aside>
     </div>
+
+    <DataSourceConfigDialog
+      v-if="showDataSourceDialog"
+      @confirm="handleDataSourceConfirm"
+      @close="handleDataSourceDialogClose"
+    />
   </div>
 </template>
 
@@ -62,21 +70,29 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { useDashboardStore } from '@/store/dashboard'
+import { useDataSourceStore } from '@/store/datasource'
 import { v4 as uuidv4 } from 'uuid'
 import WidgetPanel from '@/components/editor/WidgetPanel.vue'
 import DashboardRenderer from '@/components/dashboard/DashboardRenderer.vue'
 import InspectorPanel from '@/components/editor/InspectorPanel.vue'
+import DataSourceConfigDialog from '@/components/editor/DataSourceConfigDialog.vue'
 import type { DashboardWidget, WidgetType } from '@/types/widget'
+import type { DataSourceConfig } from '@/types/datasource'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const dashboardStore = useDashboardStore()
+const dataSourceStore = useDataSourceStore()
 
 const isDragOver = ref(false)
 const draggedWidgetType = ref<WidgetType | null>(null)
+const showDataSourceDialog = ref(false)
+const pendingWidgetType = ref<WidgetType | null>(null)
+const editingWidget = ref<DashboardWidget | null>(null)
 
 onMounted(() => {
   dashboardStore.loadFromLocalStorage()
+  dataSourceStore.loadFromLocalStorage()
 })
 
 function handlePreview() {
@@ -85,6 +101,7 @@ function handlePreview() {
 
 function handleSave() {
   dashboardStore.saveToLocalStorage()
+  dataSourceStore.saveToLocalStorage()
   alert('佈局已儲存')
 }
 
@@ -114,12 +131,61 @@ function handleDrop(event: DragEvent) {
   const type = event.dataTransfer?.getData('widget-type') as WidgetType | undefined
   if (!type) return
 
-  const id = uuidv4()
-  const widget = createWidget(type, id)
-  dashboardStore.addWidget(widget)
+  pendingWidgetType.value = type
+  showDataSourceDialog.value = true
 }
 
-function createWidget(type: WidgetType, id: string): DashboardWidget {
+function handleDataSourceConfirm(dataSourceType: 'API' | 'WebSocket' | 'Manual', config: DataSourceConfig) {
+  if (pendingWidgetType.value) {
+    const dataSourceId = dataSourceStore.addDataSource(dataSourceType, config)
+    const id = uuidv4()
+    const widget = createWidget(pendingWidgetType.value, id, dataSourceId)
+    dashboardStore.addWidget(widget)
+    showDataSourceDialog.value = false
+    pendingWidgetType.value = null
+  } else if (editingWidget.value) {
+    dataSourceStore.updateDataSource(editingWidget.value.dataSourceId, {
+      type: dataSourceType,
+      config
+    })
+    showDataSourceDialog.value = false
+    editingWidget.value = null
+  }
+}
+
+function handleDataSourceEdit(widget: DashboardWidget) {
+  editingWidget.value = widget
+  showDataSourceDialog.value = true
+}
+
+function handleDataSourceRefresh(widget: DashboardWidget) {
+  const dataSource = dataSourceStore.getDataSource(widget.dataSourceId)
+  if (!dataSource || dataSource.type === 'WebSocket') return
+
+  dataSourceService.fetchData(dataSource)
+    .then(data => {
+      const updatedProps = {
+        title: data.title || widget.props.title,
+        value: data.value || data.data || widget.props.value,
+        data: data.data || widget.props.data
+      }
+      dashboardStore.updateWidget(widget.id, {
+        ...widget,
+        props: { ...widget.props, ...updatedProps }
+      })
+    })
+    .catch(error => {
+      console.error('Failed to refresh data:', error)
+      alert('資料更新失敗')
+    })
+}
+
+function handleDataSourceDialogClose() {
+  showDataSourceDialog.value = false
+  pendingWidgetType.value = null
+}
+
+function createWidget(type: WidgetType, id: string, dataSourceId: string): DashboardWidget {
   const widget: DashboardWidget = {
     id,
     type,
@@ -130,7 +196,8 @@ function createWidget(type: WidgetType, id: string): DashboardWidget {
       h: 4,
       i: id
     },
-    props: {}
+    props: {},
+    dataSourceId
   }
 
   switch (type) {
